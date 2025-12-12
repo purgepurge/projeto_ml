@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsão de Vendas Walmart - Machine Learning</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            width: 90%;
+            max-width: 1200px;
+            height: 85vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 60px;
+            display: none;
+            flex-direction: column;
+            position: relative;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .slide-header {
+            border-bottom: 4px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            color: #4a5568;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            margin-top: 20px;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 1.3em;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .metric-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .metric-box h3 {
+            color: white;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .metric-desc {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            padding: 12px 0;
+            font-size: 1.2em;
+            color: #4a5568;
+            position: relative;
+            padding-left: 35px;
+        }
+
+        li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+
+        .highlight {
+            background: #fef3c7;
+            padding: 20px;
+            border-left: 5px solid #f59e0b;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-size: 1.1em;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 1.05em;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            color: #a0aec0;
+            font-size: 1em;
+        }
+
+        .author-info {
+            text-align: center;
+            margin-top: 40px;
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .feature-importance {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .importance-bar {
+            background: #e2e8f0;
+            height: 25px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .importance-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            color: white;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation">
+        <!-- Slide 1: Título -->
+        <div class="slide active">
+            <div class="slide-header">
+                <h1>Previsão de Vendas Semanais do Walmart</h1>
+                <p class="subtitle">Utilizando Algoritmos Clássicos de Machine Learning</p>
+            </div>
+            <div class="content">
+                <div class="author-info">
+                    <h3>Willys Dutra Alencar</h3>
+                    <p>Dezembro de 2025</p>
+                </div>
+                <div class="highlight" style="margin-top: 60px;">
+                    <h3 style="color: #f59e0b;">Resumo do Projeto</h3>
+                    <p style="font-size: 1.15em; line-height: 1.6; color: #4a5568;">
+                        Desenvolvimento de modelo preditivo para estimar vendas semanais utilizando 
+                        técnicas de Machine Learning supervisionado. Dataset com 6.435 registros de 
+                        45 lojas diferentes (2010-2012).
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">Slide 1 de 10</div>
+            <div class="controls">
+                <button id="prev" disabled>← Anterior</button>
+                <button id="next">Próximo →</button>
+            </div>
+        </div>
+
+        <!-- Slide 2: Contexto e Problema -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Contexto e Problema</h2>
+            </div>
+            <div class="content">
+                <div class="two-columns">
+                    <div>
+                        <h3>Desafios do Varejo Moderno</h3>
+                        <ul>
+                            <li>Sazonalidade e tendências temporais</li>
+                            <li>Variabilidade entre diferentes unidades</li>
+                            <li>Influência de fatores econômicos externos</li>
+                            <li>Impacto de eventos especiais e feriados</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Por que Machine Learning?</h3>
+                        <ul>
+                            <li>Captura relações não-lineares</li>
+                            <li>Processa múltiplas variáveis simultaneamente</li>
+                            <li>Superior aos métodos estatísticos tradicionais</li>
+                            <li>Adaptável a novos padrões</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight">
+                    <p style="font-size: 1.2em; color: #4a5568;">
+                        <strong>Impacto:</strong> Previsões imprecisas geram custos significativos por excesso 
+                        de estoque ou vendas perdidas. Melhorias na acurácia podem reduzir custos em até 30%.
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">Slide 2 de 10</div>
+            <div class="controls">
+                <button id="prev">← Anterior</button>
+                <button id="next">Próximo →</button>
+            </div>
+        </div>
+
+        <!-- Slide 3: Objetivos -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Objetivos do Projeto</h2>
+            </div>
+            <div class="content">
+                <h3>Objetivo Geral</h3>
+                <div class="highlight">
+                    <p style="font-size: 1.15em; color: #4a5568;">
+                        Desenvolver um modelo de Machine Learning capaz de prever vendas semanais 
+                        com alta precisão, utilizando algoritmos clássicos de aprendizado supervisionado.
+                    </p>
+                </div>
+                
+                <h3>Objetivos Específicos</h3>
+                <ul>
+                    <li>Realizar análise exploratória detalhada do dataset</li>
+                    <li>Implementar pipeline completo de pré-processamento</li>
+                    <li>Treinar e comparar três algoritmos: Linear, Ridge e Random Forest</li>
+                    <li>Avaliar desempenho com métricas apropriadas (RMSE, MAE, R²)</li>
+                    <li>Aplicar validação cruzada e controle de overfitting</li>
+                    <li>Identificar variáveis mais relevantes para predição</li>
+                    <li>Fornecer recomendações práticas baseadas nos resultados</li>
+                </ul>
+            </div>
+            <div class="slide-number">Slide 3 de 10</div>
+            <div class="controls">
+                <button id="prev">← Anterior</button>
+                <button id="next">Próximo →</button>
+            </div>
+        </div>
+
+        <!-- Slide 4: Dataset -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Base de Dados</h2>
+            </div>
+            <div class="content">
+                <div class="grid-3">
+                    <div class="card">
+                        <h4>Período</h4>
+                        <p style="font-size: 1.5em; color: #667eea; font-weight: bold;">2010-2012</p>
+                        <p>Fev/2010 a Out/2012</p>
+                    </div>
+                    <div class="card">
+                        <h4>Lojas</h4>
+                        <p style="font-size: 1.5em; color: #667eea; font-weight: bold;">45 lojas</p>
+                        <p>Diferentes localidades</p>
+                    </div>
+                    <div class="card">
+                        <h4>Registros</h4>
+                        <p style="font-size: 1.5em; color: #667eea; font-weight: bold;">6.435</p>
+                        <p>Vendas semanais</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">Variáveis Principais</h3>
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>Variável</th>
+                            <th>Tipo</th>
+                            <th>Descrição</th>
+                        </tr>
+                        <tr>
+                            <td><strong>Weekly_Sales</strong></td>
+                            <td>Target</td>
+                            <td>Vendas semanais em dólares</td>
+                        </tr>
+                        <tr>
+                            <td>Store</td>
+                            <td>Categórica</td>
+                            <td>Identificador da loja (1-45)</td>
+                        </tr>
+                        <tr>
+                            <td>Temperature</td>
+                            <td>Numérica</td>
+                            <td>Temperatura média (°F)</td>
+                        </tr>
+                        <tr>
+                            <td>Fuel_Price</td>
+                            <td>Numérica</td>
+                            <td>Preço do combustível</td>
+                        </tr>
+                        <tr>
+                            <td>CPI / Unemployment</td>
+                            <td>Numérica</td>
+                            <td>Indicadores econômicos</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="slide-number">Slide 4 de 10</div>
+            <div class="controls">
+                <button id="prev">← Anterior</button>
+                <button id="next">Próximo →</button>
+            </div>
+        </div>
+
+        <!-- Slide 5: Metodologia -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Metodologia</h2>
+            </div>
+            <div class="content">
+                <div class="two-columns">
+                    <div>
+                        <h3>Pré-processamento</h3>
+                        <div class="card">
+                            <h4>Engenharia de Atributos</h4>
+                            <p>Extraídas 4 features temporais da variável Date:</p>
+                            <ul style="font-size: 0.95em;">
+                                <li>Year (ano)</li>
+                                <li>Month (mês)</li>
+                                <li>Week (semana)</li>
+                                <li>DayOfWeek (dia)</li>
+                            </ul>
+                        </div>
+                        <div class="card" style="margin-top: 15px;">
+                            <h4>Transformações</h4>
+                            <p><strong>Numéricas:</strong> StandardScaler</p>
+                            <p><strong>Categóricas:</strong> OneHotEncoder</p>
+                            <p><strong>Total features:</strong> 55</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3>Modelos Implementados</h3>
+                        <div class="card">
+                            <h4>1. Regressão Linear</h4>
+                            <p>Baseline - modelo mais simples</p>
+                        </div>
+                        <div class="card" style="margin-top: 15px;">
+                            <h4>2. Ridge Regression</h4>
+                            <p>Com regularização L2 - Grid Search para α</p>
+                        </div>
+                        <div class="card" style="margin-top: 15px;">
+                            <h4>3. Random Forest</h4>
+                            <p>100 árvores - captura não-linearidades</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="highlight" style="margin-top: 20px;">
+                    <p style="font-size: 1.1em; color: #4a5568;">
+                        <strong>Divisão dos dados:</strong> 80% treino (5.148 amostras) | 20% teste (1.287 amostras)
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">Slide 5 de 10</div>
+            <div class="controls">
+                <button id="prev">← Anterior</button>
+                <button id="next">Próximo →</button>
+            </div>
+        </div>
+
+        <!-- Slide 6: Resultados Principais -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Resultados Principais</h2>
+            </div>
+            <div class="content">
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>Modelo</th>
+                            <th>RMSE ($)</th>
+                            <th>MAE ($)</th>
+                            <th>R²</th>
+                        </tr>
+                        <tr>
+                            <td>Regressão Linear</td>
+                            <td>154.854,74</td>
+                            <td>96.210,42</td>
+                            <td>0,9256</td>
+                        </tr>
+                        <tr>
+                            <td>Ridge Regression</td>
+                            <td>154.676,37</td>
+                            <td>96.035,36</td>
+                            <td>0,9257</td>
+                        </tr>
+                        <tr style="background: #e6fffa;">
+                            <td><strong>Random Forest</strong></td>
+                            <td><strong>129.680,43</strong></td>
+                            <td><strong>64.828,99</strong></td>
+                            <td><strong>0,9478</strong></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <h3 style="margin-top: 30px;">Melhorias do Random Forest</h3>
+                <div class="grid-3">
+                    <div class="metric-box">
+                        <h3>RMSE</h3>
+                        <div class="metric-value">-16,2%</div>
+                        <p class="metric-desc">Redução do erro</p>
+                    </div>
+                    <div class="metric-box">
+                        <h3>MAE</h3>
+                        <div class="metric-value">-32,6%</div>
+                        <p class="metric-desc">Redução do erro médio</p>
+                    </div>
+                    <div class="metric-box">
+                        <h3>R²</h3>
+                        <div class="metric-value">94,78%</div>
+                        <p class="metric-desc">Variância explicada</p>
+                    </div>
+                </div>
+
+                <div class="highlight" style="margin-top: 20px;">
+                    <p style="font-size: 1.2em; color: #4a5568;">
+                        <strong>Interpretação:</strong> O erro médio de $64.829 representa apenas 
+                        <strong style="color: #667eea;">6,5%</strong> das vendas médias - precisão adequada para uso prático!
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">Slide 6 de 10</div>
+            <div class="controls">
+                <button id="prev">← Anterior</button>
+                <button id="next">Próximo →</button>
+            </div>
+        </div>
+
+        <!-- Slide 7: Importância das Features -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Importância das Features</h2>
+            </div>
+            <div class="content">
+                <h3>Top 10 Features Mais Importantes</h3>
+                <div class="feature-importance">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span><strong>1. Store_20</strong></span>
+                        <span>8,91%</span>
+                    </div>
+                    <div class="importance-bar">
+                        <div class="importance-fill" style="width: 89%;">89%</div>
+                    </div>
+                </div>
+                <div class="feature-importance">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span><strong>2. Store_4</strong></span>
+                        <span>6,54%</span>
+                    </div>
+                    <div class="importance-bar">
+                        <div class="importance-fill" style="width: 65%;">65%</div>
+                    </div>
+                </div>
+                <div class="feature-importance">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span><strong>3. Store_14</strong></span>
+                        <span>5,87%</span>
+                    </div>
+                    <div class="importance-bar">
+                        <div class="importance-fill" style="width: 59%;">59%</div>
+                    </div>
+                </div>
+                <div class="feature-importance">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span><strong>6. Unemployment</strong></span>
+                        <span>4,12%</span>
+                    </div>
+                    <div class="importance-bar">
+                        <div class="importance-fill" style="width: 41%;">41%</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 25px;">Importância por Categoria</h3>
+                <div class="grid-3">
+                    <div class="metric-box">
+                        <h3>Lojas (Store ID)</h3>
+                        <div class="metric-value">68,3%</div>
+                        <p class="metric-desc">Predominância absoluta</p>
+                    </div>
+                    <div class="metric-box">
+                        <h3>Econômicas</h3>
+                        <div class="metric-value">18,7%</div>
+                        <p class="metric-desc">CPI + Unemployment</p>
+                    </div>
+                    <div class="metric-box">
+                        <h3>Temporais</h3>
+                        <div class="metric-value">9,4%</div>
+                        <p class="metric-desc">Month + Week</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">Slide 7 de 10</div>
+            <div class="controls">
+                <button id="prev">← Anterior</button>
+                <button id="next">Próximo →</button>
+            </div>
+        </div>
+
+        <!-- Slide 8: Insights -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Principais Insights</h2>
+            </div>
+            <div class="content">
+                <div class="two-columns">
+                    <div>
+                        <div class="card">
+                            <h4>Heterogeneidade entre Lojas</h4>
+                            <p style="line-height: 1.6;">
+                                68,3% da importância vem das características individuais das lojas. 
+                                Cada unidade tem padrões únicos relacionados a:
+                            </p>
+                            <ul style="font-size: 0.95em; margin-top: 10px;">
+                                <li>Localização geográfica</li>
+                                <li>Tamanho da loja</li>
+                                <li>Demografia local</li>
+                                <li>Concorrência regional</li>
+                            </ul>
+                        </div>
+
+                        <div class="card" style="margin-top: 20px;">
+                            <h4>Impacto Econômico</h4>
+                            <p style="line-height: 1.6;">
+                                Desemprego e CPI são preditores significativos (18,7%), 
+                                confirmando que o cenário macroeconômico afeta o poder 
+                                de compra dos consumidores.
+                            </p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card">
+                            <h4>Padrões Sazonais</h4>
+                            <p style="line-height: 1.6;">
+                                Variáveis temporais (Month, Week) contribuem 9,4%, 
+                                refletindo comportamento sazonal:
+                            </p>
+                            <ul style="font-size: 0.95em; margin-top: 10px;">
+                                <li>Períodos de férias</li>
+                                <li>Back-to-school</li>
+                                <li>Festas de fim de ano</li>
+                            </ul>
+                        </div>
+
+                        <div class="card" style="margin-top: 20px;">
+                            <h4>Relações Não-Lineares</h4>
+                            <p style="line-height: 1.6;">
+                                A superioridade do Random Forest (16,2% melhor) evidencia 
+                                que interações complexas entre variáveis são cruciais 
+                                para predições precisas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">Slide 8 de 10</div>
+            <div class="controls">
+                <button id="prev">← Anterior</button>
+                <button id="next">Próximo →</button>
+            </div>
+        </div>
+
+        <!-- Slide 9: Validação -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Validação do Modelo</h2>
+            </div>
+            <div class="content">
+                <h3>Análise de Overfitting</h3>
+                <div class="table-container">
+                    <table>
+                        <tr>
+                            <th>Modelo</th>
+                            <th>R² Treino</th>
+                            <th>R² Teste</th>
+                            <th>Diferença</th>
+                            <th>Status</th>
+                        </tr>
+                        <tr>
+                            <td>Regressão Linear</td>
+                            <td>0,9298</td>
+                            <td>0,9256</td>
+                            <td>0,0042</td>
+                            <td>Balanceado</td>
+                        </tr>
+                        <tr>
+                            <td>Ridge Regression</td>
+                            <td>0,9299</td>
+                            <td>0,9257</td>
+                            <td>0,0042</td>
+                            <td>Balanceado</td>
+                        </tr>
+                        <tr style="background: #e6fffa;">
+                            <td><strong>Random Forest</strong></td>
+                            <td>0,9512</td>
+                            <td>0,9478</td>
+                            <td>0,0034</td>
+                            <td>Balanceado</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <h3 style="margin-top: 25px;">Validação Cruzada (K-Fold, k=5)</h3>
+                <div class="grid-3">
+                    <div class="card">
+                        <h4>Random Forest</h4>
+                        <p style="font-size: 1.4em; color: #667eea; font-weight: bold;">$131.567,89</p>
+                        <p>RMSE Médio ± $7.892,56</p>
+                        <p style="color: #10b981; font-weight: bold;">CV: 6,0%</p>
+                    </div>
+                    <div class="card">
+                        <h4>Regressão Linear</h4>
+                        <p style="font-size: 1.4em; color: #667eea; font-weight: bold;">$156.234,12</p>
+                        <p>RMSE Médio ± $8.421,37</p>
+                        <p style="color: #10b981; font-weight: bold;">CV: 5,4%</p>
+                    </div>
+                    <div class="card">
+                        <h4>Ridge Regression</h4>
+                        <p style="font-size: 1.4em; color: #667eea; font-weight: bold;">$156.089,45</p>
+                        <p>RMSE Médio ± $8.398,22</p>
+                        <p style="color: #10b981; font-weight: bold;">CV: 5,4%</p>
+                    </div>
+                </div>
+
+                <div class="highlight" style="margin-top: 20px;">
+                    <p style="font-size: 1.1em; color: #4a5568;">
+                        <strong>Conclusão:</strong> Baixo coeficiente de variação (5-6%) indica robustez e 
+                        ausência de overfitting. O modelo generaliza bem para dados não vistos!
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">Slide 9 de 10</div>
+            <div class="controls">
+                <button id="prev">← Anterior</button>
+                <button id="next">Próximo →</button>
+            </div>
+        </div>
+
+        <!-- Slide 10: Conclusões -->
+        <div class="slide">
+            <div class="slide-header">
+                <h2>Conclusões e Aplicações</h2>
+            </div>
+            <div class="content">
+                <div class="two-columns">
+                    <div>
+                        <h3>Resultados Alcançados</h3>
+                        <ul>
+                            <li>Modelo com 94,78% de precisão (R²)</li>
+                            <li>Erro médio de apenas 6,5% das vendas</li>
+                            <li>Identificação dos principais drivers</li>
+                            <li>Pipeline completo e reprodutível</li>
+                        </ul>
+
+                        <h3 style="margin-top: 25px;">Aplicações Práticas</h3>
+                        <ul>
+                            <li>Planejamento de estoque otimizado</li>
+                            <li>Alocação eficiente de recursos</li>
+                            <li>Decisões estratégicas baseadas em dados</li>
+                            <li>Identificação de lojas atípicas</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Limitações</h3>
+                        <ul>
+                            <li>Período temporal limitado (3 anos)</li>
+                            <li>Ausência de dados sobre promoções</li>
+                            <li>Sem informações de concorrência</li>
+                            <li>Agregação semanal (não diária)</li>
+                        </ul>
+
+                        <h3 style="margin-top: 25px;">Próximos Passos</h3>
+                        <ul>
+                            <li>Incorporar dados mais recentes</li>
+                            <li>Adicionar features de promoções</li>
+                            <li>Testar modelos de deep learning</li>
+                            <li>Implementar em ambiente de produção</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="highlight" style="margin-top: 25px;">
+                    <h3 style="color: #f59e0b; text-align: center;">Mensagem Final</h3>
+                    <p style="font-size: 1.2em; color: #4a5568; text-align: center; line-height: 1.6;">
+                        O projeto demonstra com sucesso a aplicação de Machine Learning para resolver 
+                        problemas reais de negócio, oferecendo uma ferramenta viável e precisa para 
+                        previsão de vendas no varejo.
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">Slide 10 de 10</div>
+            <div class="controls">
+                <button id="prev">← Anterior</button>
+                <button id="next" disabled>Próximo →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = n;
+            slides[currentSlide].classList.add('active');
+            
+            // Update buttons
+            const prevButtons = document.querySelectorAll('#prev');
+            const nextButtons = document.querySelectorAll('#next');
+            
+            prevButtons.forEach(btn => {
+                btn.disabled = currentSlide === 0;
+            });
+            
+            nextButtons.forEach(btn => {
+                btn.disabled = currentSlide === slides.length - 1;
+            });
+        }
+
+        // Event delegation for navigation
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'next' && currentSlide < slides.length - 1) {
+                showSlide(currentSlide + 1);
+            } else if (e.target.id === 'prev' && currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' && currentSlide < slides.length - 1) {
+                showSlide(currentSlide + 1);
+            } else if (e.key === 'ArrowLeft' && currentSlide > 0) {
+                showSlide(currentSlide - 1);
+            }
+        });
+    </script>
+</body>
+</html>
